@@ -171,14 +171,13 @@ streamlit run app.py
 ```
 
 ## 13. Input Output images
+streamlit.app Input Screen 
+![image](https://github.com/user-attachments/assets/8784f324-6f43-41d2-9290-baa68fc3cabd)
+![image](https://github.com/user-attachments/assets/ce903240-9ade-431a-9929-2869c7d3d3f6)
 
-### Video Upload Screen
 
-![Streamlit Output]
 
-### Streamlit Output Example
-
-![Freame Screen]
+Local Screen 
 ![image](https://github.com/user-attachments/assets/e40519e4-c302-4966-bd2a-7145b0bbd13d)
 
 ![image](https://github.com/user-attachments/assets/a502cd43-0cc2-4bc1-b441-51d1004bcf95)
