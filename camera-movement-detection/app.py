@@ -58,8 +58,8 @@ def main():
     with tab1:
         detection_type, threshold, min_features, min_area, show_visualization = sidebar_params()
         uploaded_video = video_upload()
-        analyze = st.button("Analiz Et")
-        if uploaded_video and analyze:
+        start_analysis = st.button("Analizi Başlat")
+        if uploaded_video and start_analysis:
             tfile = tempfile.NamedTemporaryFile(delete=False)
             tfile.write(uploaded_video.read())
             video_path = tfile.name
@@ -67,7 +67,13 @@ def main():
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)
             st.write(f"Video loaded: {total_frames} frames, {fps:.2f} FPS")
-            sample_rate = 1  
+            # Uzun videolar için frame limiti uygula
+            MAX_FRAMES = 200
+            if total_frames > MAX_FRAMES:
+                sample_rate = max(1, total_frames // MAX_FRAMES)
+                st.warning(f"Video çok uzun olduğu için {MAX_FRAMES} frame ile analiz yapılacak (her {sample_rate}. frame alınacak).")
+            else:
+                sample_rate = 1
             frames = []
             frame_indices = []
             with st.spinner(f"Extracting frames (sampling 1 in every {sample_rate} frames)..."):
@@ -95,7 +101,7 @@ def main():
             st.session_state['show_visualization'] = show_visualization
 
             key = (uploaded_video.name, detection_type, threshold, min_features, min_area)
-            if 'last_key' not in st.session_state or st.session_state['last_key'] != key or analyze:
+            if 'last_key' not in st.session_state or st.session_state['last_key'] != key or start_analysis:
                 if detection_type == "Camera Movement":
                     with st.spinner("Detecting camera movement..."):
                         movement_indices = detect_significant_movement_orb(
@@ -199,5 +205,4 @@ def main():
             st.info("Please upload a video and start analysis from the first tab.")
 
 if __name__ == "__main__":
-    st.write('App started!')
     main()
