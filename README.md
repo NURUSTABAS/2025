@@ -168,11 +168,15 @@ streamlit run app.py
 
 ### Video Upload Screen
 
-![Streamlit Output](images/video_upload_screen.png)
+![Streamlit Output]
 
 ### Streamlit Output Example
 
-![Freame Screen](images/freame_screen.png)
+![Freame Screen]
+![image](https://github.com/user-attachments/assets/e40519e4-c302-4966-bd2a-7145b0bbd13d)
+
+![image](https://github.com/user-attachments/assets/a502cd43-0cc2-4bc1-b441-51d1004bcf95)
+
 
 ## AI Prompts & Tools Used
 
