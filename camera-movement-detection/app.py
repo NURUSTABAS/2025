@@ -58,7 +58,7 @@ def main():
     with tab1:
         detection_type, threshold, min_features, min_area, show_visualization = sidebar_params()
         uploaded_video = video_upload()
-        start_analysis = st.button("Analizi Başlat")
+        start_analysis = st.button("Start Analysis")
         if uploaded_video and start_analysis:
             tfile = tempfile.NamedTemporaryFile(delete=False)
             tfile.write(uploaded_video.read())
@@ -71,7 +71,7 @@ def main():
             MAX_FRAMES = 200
             if total_frames > MAX_FRAMES:
                 sample_rate = max(1, total_frames // MAX_FRAMES)
-                st.warning(f"Video çok uzun olduğu için {MAX_FRAMES} frame ile analiz yapılacak (her {sample_rate}. frame alınacak).")
+                st.warning(f"The video is too long, so only {MAX_FRAMES} frames will be analyzed (every {sample_rate}th frame will be used).")
             else:
                 sample_rate = 1
             frames = []

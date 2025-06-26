@@ -1,8 +1,8 @@
 # Camera and Object Movement Detection - Project Presentation
 
-After uploading a video, the analysis results are displayed in the "Results" section.
-Whenever you change any parameter or switch between camera movement and object movement detection, the video is automatically re-analyzed and the results are updated instantly.
-This ensures that you always see the most relevant and up-to-date movement detection results based on your selected settings.
+After uploading a video, you must click the **'Analizi Başlat'** (Start Analysis) button in the "Upload & Analysis" tab to perform the analysis.
+If you change any parameter or switch between camera movement and object movement detection, you need to click the **'Analizi Başlat'** button again to re-analyze the video with the new settings.
+This ensures that the analysis is only performed when you explicitly request it, preventing unnecessary computations for large videos.
 Additionally, at the bottom of the Results section, there is a downloadable analysis report available for the user.
 
 ## 1. Project Overview
@@ -42,7 +42,7 @@ This project is a Streamlit web application for detecting both **camera movement
 - **Object Movement:**
   - _Minimum Object Area_: Filters out small, insignificant movements
 
-Changing any parameter or switching between detection types automatically re-runs the analysis on the uploaded video.
+Changing any parameter or switching between detection types does **not** automatically re-run the analysis. You must click the **'Analizi Başlat'** button in the "Upload & Analysis" tab to update the results with the new settings.
 
 ## 4. Core Code Snippets
 
@@ -150,7 +150,7 @@ camera-movement-detection/
 - Distinguishing between camera movement and object movement, especially when both occur together.
 - Avoiding false positives in object movement detection due to camera shake.
 - Ensuring reliable detection with varying video quality and lighting conditions.
-- Providing a responsive and user-friendly interface that updates results automatically when parameters change.
+- Providing a responsive and user-friendly interface where the user explicitly triggers analysis by clicking the 'Analizi Başlat' button after changing parameters or detection type.
 
 ## 12. How to Run the App Locally
 
