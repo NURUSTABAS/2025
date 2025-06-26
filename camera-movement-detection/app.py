@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import io
 import base64
+import gc  # Garbage collection için
 from PIL import Image
 from core.movement import (
     detect_significant_movement,
@@ -67,24 +68,54 @@ def main():
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)
             st.write(f"Video loaded: {total_frames} frames, {fps:.2f} FPS")
-            # Uzun videolar için frame limiti uygula
-            MAX_FRAMES = 200
+            # Deployment için optimize edilmiş frame limiti
+            # Streamlit Cloud bellek limitlerini dikkate alarak
+            is_cloud = (
+                'STREAMLIT_SHARING' in os.environ or 
+                'STREAMLIT_CLOUD' in os.environ or
+                'HOSTNAME' in os.environ and 'streamlit' in os.environ.get('HOSTNAME', '').lower()
+            )
+            
+            if is_cloud:
+                # Cloud deployment için daha düşük limit
+                MAX_FRAMES = 50  # Daha da düşük limit
+                st.info("🚀 Cloud deployment tespit edildi. Performans için maksimum 50 frame analiz edilecek.")
+            else:
+                # Local çalıştırma için kullanıcı seçimi
+                max_frames_option = st.selectbox(
+                    "Maksimum frame sayısı seçin:",
+                    ["50", "100", "200"],
+                    index=1  # Varsayılan olarak 100
+                )
+                MAX_FRAMES = int(max_frames_option)
+            
             if total_frames > MAX_FRAMES:
                 sample_rate = max(1, total_frames // MAX_FRAMES)
-                st.warning(f"The video is too long, so only {MAX_FRAMES} frames will be analyzed (every {sample_rate}th frame will be used).")
+                st.warning(f"Video çok uzun, bu nedenle sadece {MAX_FRAMES} frame analiz edilecek (her {sample_rate}. frame kullanılacak).")
             else:
                 sample_rate = 1
             frames = []
             frame_indices = []
             with st.spinner(f"Extracting frames (sampling 1 in every {sample_rate} frames)..."):
                 frame_idx = 0
+                extracted_count = 0
                 while True:
                     ret, frame = cap.read()
                     if not ret:
                         break
                     if frame_idx % sample_rate == 0:
-                        frames.append(frame.copy())  # frame'i kopyala, bellekte tut
+                        # Bellek optimizasyonu için frame'i küçült
+                        if frame.shape[0] > 720:  # Yükseklik 720'den büyükse küçült
+                            scale = 720 / frame.shape[0]
+                            new_width = int(frame.shape[1] * scale)
+                            frame = cv2.resize(frame, (new_width, 720))
+                        frames.append(frame.copy())
                         frame_indices.append(frame_idx)
+                        extracted_count += 1
+                        
+                        # Deployment için ekstra güvenlik - maksimum frame sayısını aşma
+                        if extracted_count >= MAX_FRAMES:
+                            break
                     frame_idx += 1
             cap.release()
             st.write(f"Extracted {len(frames)} frames for processing.")
@@ -120,6 +151,9 @@ def main():
                         'show_visualization': show_visualization
                     }
                     st.session_state['analysis'] = analysis
+                    
+                    # Bellek temizliği
+                    gc.collect()
                 else:
                     with st.spinner("Detecting object movement..."):
                         motion_results = detect_object_movement_with_compensation(
