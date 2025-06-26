@@ -1,95 +1,182 @@
-# ATP Core Talent 2025
-# Core Talent AI Coder Challenge: Camera Movement Detection
+# Camera and Object Movement Detection - Project Presentation
 
-**Detecting Significant Camera Movement Using Image Recognition**
+After uploading a video, the analysis results are displayed in the "Results" section.
+Whenever you change any parameter or switch between camera movement and object movement detection, the video is automatically re-analyzed and the results are updated instantly.
+This ensures that you always see the most relevant and up-to-date movement detection results based on your selected settings.
+Additionally, at the bottom of the Results section, there is a downloadable analysis report available for the user.
+
+## 1. Project Overview
+
+This project is a Streamlit web application for detecting both **camera movement** and **object movement** in video files. Camera movement detection uses the ORB (Oriented FAST and Rotated BRIEF) feature matching algorithm, while object movement detection is based on background subtraction (MOG2) and contour area analysis. Users can upload videos, adjust detection parameters, visualize results, and download detailed CSV reports of detected movement events.
+
+### 1.1. Main Features
+
+- **Two Types of Movement Detection:** Camera movement and object movement
+- **Video File Support:** Upload MP4, AVI, or MOV files
+- **Adjustable Parameters:** User-friendly parameter controls
+- **Visualization:** Visual overlays for detected movements
+- **Reporting:** Downloadable CSV analysis reports
+
+## 2. Movement Detection Logic
+
+### 2.1. Camera Movement Detection
+
+- **Technology:** ORB feature extraction and matching
+- **Parameters:**
+  - **Movement Threshold:** Minimum average movement (in pixels) between matched keypoints to detect camera movement
+  - **Minimum Features:** Minimum number of matched ORB keypoints required for reliable detection
+- **Logic:** For each pair of consecutive frames, ORB keypoints are extracted and matched. If the number of matches exceeds the minimum and the average movement exceeds the threshold, the frame is marked as a camera movement event.
+
+### 2.2. Object Movement Detection
+
+- **Technology:** Background subtraction (MOG2) and contour area analysis
+- **Parameter:**
+  - **Minimum Object Area:** Minimum area (in pixels) for a detected contour to be considered as object movement
+- **Logic:** For each frame, a foreground mask is generated using MOG2. Contours are extracted, and if any contour's area exceeds the minimum, the frame is marked as containing object movement. Frames with significant camera movement are excluded from object movement results.
+
+## 3. Parameters and Their Effects
+
+- **Camera Movement:**
+  - _Movement Threshold_: Controls sensitivity to camera movement (higher = less sensitive)
+  - _Minimum Features_: Ensures reliability by requiring enough keypoint matches
+- **Object Movement:**
+  - _Minimum Object Area_: Filters out small, insignificant movements
+
+Changing any parameter or switching between detection types automatically re-runs the analysis on the uploaded video.
+
+## 4. Core Code Snippets
+
+### Camera Movement Detection (ORB)
+
+```python
+def detect_significant_movement_orb(frames, threshold=5.0, min_matches=10):
+    orb = cv2.ORB_create(nfeatures=500)
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    prev_kp, prev_des = None, None
+    movement_indices = []
+    for idx, frame in enumerate(frames[:-1]):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        kp, des = orb.detectAndCompute(gray, None)
+        if prev_kp is not None and prev_des is not None and des is not None:
+            matches = bf.match(prev_des, des)
+            if len(matches) >= min_matches:
+                pts_prev = np.float32([prev_kp[m.queryIdx].pt for m in matches])
+                pts_curr = np.float32([kp[m.trainIdx].pt for m in matches])
+                mean_movement = np.mean(np.linalg.norm(pts_curr - pts_prev, axis=1))
+                if mean_movement > threshold:
+                    movement_indices.append(idx + 1)
+        prev_kp, prev_des = kp, des
+    return movement_indices
+```
+
+### Object Movement Detection (Background Subtraction)
+
+```python
+def detect_object_movement_with_compensation(frames, min_area=500, camera_motion_threshold=5.0):
+    bg_subtractor = cv2.createBackgroundSubtractorMOG2()
+    motion_results = []
+    prev_frame = None
+    for idx, frame in enumerate(frames):
+
+        fg_mask = bg_subtractor.apply(frame)
+        contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        valid_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_area]
+
+        motion_detected = len(valid_contours) > 0 # and not camera_motion_detected
+        motion_results.append({'frame_index': idx, 'motion_detected': motion_detected})
+    return motion_results
+
+```
+
+## 5. Video Processing Workflow
+
+- User uploads a video file
+- Frames are extracted and analyzed
+- Camera and/or object movement is detected based on selected mode and parameters
+- Results are visualized and a downloadable CSV report is generated
+
+## 6. Visualization
+
+- Camera movement: Visual overlays between frames with detected movement
+- Object movement: Bounding boxes on moving objects (excluding frames with significant camera movement)
+
+## 7. Reporting System
+
+- Downloadable CSV report at the bottom of the Results page
+- **Camera movement report columns:** Frame Index, Time (seconds), Movement Threshold Used, Min Features Used
+- **Object movement report columns:** Frame Index, Time (seconds), Min Object Area Used
+
+## 8. Use Cases
+
+- Video production: Detecting camera shake, scene transitions
+- Security: Detecting camera tampering or sabotage
+- Robotics/Drone: Evaluating camera stabilization, navigation analysis
+
+## 9. Technical Requirements
+
+- **Python 3.6+**
+- **Main Libraries:**
+  - streamlit
+  - opencv-python
+  - numpy
+  - pandas
+  - Pillow
+
+## 10. Project Structure
+
+```
+camera-movement-detection/
+├── app.py                    # Main Streamlit application
+├── core/
+│   ├── movement.py           # Movement detection algorithms
+│   ├── report.py             # CSV report generation
+│   ├── ui.py                 # UI components and helpers
+│   └── visualization.py      # Visualization utilities
+├── DEPLOYMENT.md             # Deployment instructions
+├── Dockerfile                # Docker configuration
+├── PROJECT_PRESENTATION.md   # This presentation file
+└── README.md                 # Project README
+```
+
+## 11. Assumptions and Challenges
+
+**Assumptions:**
+
+- Input videos are of reasonable quality and not extremely noisy.
+- Object movement and camera movement do not always occur simultaneously.
+
+**Challenges:**
+
+- Distinguishing between camera movement and object movement, especially when both occur together.
+- Avoiding false positives in object movement detection due to camera shake.
+- Ensuring reliable detection with varying video quality and lighting conditions.
+- Providing a responsive and user-friendly interface that updates results automatically when parameters change.
+
+## 12. How to Run the App Locally
+
+```bash
+git clone https://github.com/NURUSTABAS/2025
+
+cd .\2025-main\camera-movement-detection\
+
+pip install -r requirements.txt
+venv\Scripts\activate
+streamlit run app.py
+```
+
+## 13. Input Output images
+
+### Video Upload Screen
+
+![Streamlit Output](images/video_upload_screen.png)
+
+### Streamlit Output Example
+
+![Freame Screen](images/freame_screen.png)
+
+## AI Prompts & Tools Used
+
+- **ChatGPT**: Assisted with OpenCV algorithm explanations, code improvements, and documentation structure.
+- **Cursor**: Used as an AI-powered code editor for efficient refactoring, debugging, and performance comparisons (e.g., SIFT vs. ORB), as well as resolving Streamlit deployment issues.
 
 ---
-
-## Scenario
-
-Imagine you are tasked with building a component for a smart camera system. Your goal is to detect **significant movement**—for example, if someone moves or tilts the camera or if the entire camera is knocked or shifted. This is different from simply detecting moving objects in the scene.
-
----
-
-## Requirements
-
-1. **Input:**
-
-   * A sequence of images or frames (at least 10-20), simulating a fixed camera, with some frames representing significant camera movement (tilt, pan, large translation), and others showing a static scene or minor background/object motion.
-   * You may use public datasets, generate synthetic data, or simulate with your own webcam.
-
-     * Example: [CameraBench Dataset on Hugging Face](https://huggingface.co/datasets/syCen/CameraBench)
-2. **Task:**
-
-   * Build an algorithm (**Python preferred**) that analyzes consecutive frames and detects when significant camera movement occurs.
-   * Output a list of frames (by index/number) where significant movement is detected.
-3. **Expected Features:**
-
-   * **Basic:** Frame differencing or feature matching to detect large global shifts (e.g., using OpenCV’s ORB/SIFT/SURF, optical flow, or homography).
-   * **Bonus:** Distinguish between camera movement and object movement within the scene (e.g., use keypoint matching, estimate transformation matrices, etc.).
-4. **Deployment:**
-
-   * Wrap your solution in a small web app (**Streamlit, Gradio, or Flask**) that allows the user to upload a sequence of images (or a video), runs the detection, and displays the result.
-   * Deploy the app on a public platform (**Vercel, Streamlit Cloud, Hugging Face Spaces**, etc.)
-5. **Deliverables:**
-
-   * Public app URL
-   * GitHub repo (with code and requirements.txt)
-   * README (explaining your approach, dataset, and how to use the app)
-
-     * **Sample README Outline:**
-
-       * Overview of your approach and movement detection logic
-       * Any challenges or assumptions
-       * How to run the app locally
-       * Link to the live app
-       * Example input/output screenshots
-   * AI Prompts or Chat History (if used for support)
-
----
-
-## Evaluation Rubric
-
-| Criteria           | Points | Details                                                                                    |
-| ------------------ | ------ | ------------------------------------------------------------------------------------------ |
-| **Correctness**    | 5      | Accurately detects significant camera movement; low false positives/negatives.             |
-| **Implementation** | 5      | Clean code, good use of OpenCV or relevant libraries, modular structure.                   |
-| **Deployment**     | 5      | App is online, easy to use, and functions as described.                                    |
-| **Innovation**     | 3      | Advanced techniques (feature matching, transformation estimation, clear object vs camera). |
-| **Documentation**  | 2      | Clear README, instructions, and concise explanation of method/logic.                       |
-
----
-
-## Suggested Stack
-
-* **Python** or **C#**
-* **OpenCV** for computer vision
-* **Streamlit**, **Gradio**, or a **shadcn-powered Vercel site** for quick web UI
-* **GitHub** for code repo, **Streamlit Cloud**, **Hugging Face Spaces**, or **Vercel** for deployment
-
----
-
-# 📋 Candidate Instructions
-
-1. **Fork this repository** (or start your own repository with the same structure).
-2. **Implement your movement detection algorithm** in `movement_detector.py`.
-3. **Develop a simple web app** (`app.py`) that allows users to upload images/sequences and view detection results.
-4. **Deploy your app** on a public platform (e.g., Streamlit Cloud, Hugging Face Spaces, Vercel, Heroku) and **share both your deployed app URL and GitHub repository link**.
-5. **Document your work**: Include a `README.md` that explains your approach, how to run your code, and sample results (with screenshots or example outputs).
-
----
-
-**Deadline:**
-🕓 **27.06.2025**
-
----
-
-**Plagiarism Policy:**
-
-* This must be **individual, AI-powered work**.
-* You may use open-source libraries, but you **must cite** all external resources and code snippets.
-* Do not submit work copied from others or from the internet without proper acknowledgment.
-
----
-
-**Good luck! Show us your best hands-on AI skills!**

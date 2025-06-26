@@ -1,30 +1,191 @@
 import streamlit as st
 import numpy as np
+import cv2
+import tempfile
+import os
+import pandas as pd
+import io
+import base64
 from PIL import Image
-import movement_detector
-
-st.title("Camera Movement Detection Demo")
-st.write(
-    "Upload a sequence of images (e.g., from a camera). The app will detect frames with significant camera movement."
+from core.movement import (
+    detect_significant_movement,
+    detect_significant_movement_orb,
+    detect_object_movement,
+    detect_object_movement_orb,
+    detect_object_movement_with_compensation,
 )
+from core.visualization import visualize_movement, visualize_object_movement, visualize_object_motion_bs
+from core.report import generate_report_link
+from core.ui import sidebar_params, video_upload, main_tabs, show_results_camera, show_results_object, show_report_link
 
-uploaded_files = st.file_uploader(
-    "Choose image files", type=["jpg", "jpeg", "png"], accept_multiple_files=True
-)
+def analyze_orb_movement(frames, movement_indices, orb_threshold=5.0, min_matches=10):
+    orb = cv2.ORB_create(nfeatures=500)
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    prev_kp, prev_des = None, None
+    prev_gray = None
+    analysis = {}
+    for idx, frame in enumerate(frames[:-1]):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        kp, des = orb.detectAndCompute(gray, None)
+        if prev_kp is not None and prev_des is not None and des is not None:
+            matches = bf.match(prev_des, des)
+            if len(matches) >= min_matches:
+                pts_prev = np.float32([prev_kp[m.queryIdx].pt for m in matches])
+                pts_curr = np.float32([kp[m.trainIdx].pt for m in matches])
+                displacements = pts_curr - pts_prev
+                magnitudes = np.linalg.norm(displacements, axis=1)
+                mean_movement = np.mean(magnitudes)
+                std_movement = np.std(magnitudes)
+                if mean_movement > orb_threshold:
+                    analysis[idx+1] = {
+                        "Ortalama Hareket (px)": round(mean_movement,2),
+                        "Standart Sapma": round(std_movement,2),
+                        "Eşleşen Keypoint": len(matches)
+                    }
+        prev_kp, prev_des = kp, des
+        prev_gray = gray
+    return {idx: analysis.get(idx, {}) for idx in movement_indices}
 
-if uploaded_files:
-    frames = []
-    for uploaded_file in uploaded_files:
-        image = Image.open(uploaded_file)
-        frame = np.array(image)
-        if frame.shape[-1] == 4:  # RGBA to RGB
-            frame = frame[:, :, :3]
-        frames.append(frame)
+def main():
+    st.set_page_config(page_title="Camera and Object Movement Detection", layout="wide", initial_sidebar_state="expanded")
+    st.title("Camera and Object Movement Detection")
+    st.write("This application detects camera and object movements in videos.\n\n- **Camera movement** is detected using the ORB (Oriented FAST and Rotated BRIEF) feature matching algorithm.\n- **Object movement** is detected using background subtraction (MOG2) and contour area analysis.\n")
+    tab1, tab2 = main_tabs()
+    if 'results' not in st.session_state:
+        st.session_state['results'] = None
+    if 'analysis' not in st.session_state:
+        st.session_state['analysis'] = None
+    with tab1:
+        detection_type, threshold, min_features, min_area, show_visualization = sidebar_params()
+        uploaded_video = video_upload()
+        if uploaded_video:
+            tfile = tempfile.NamedTemporaryFile(delete=False)
+            tfile.write(uploaded_video.read())
+            video_path = tfile.name
+            cap = cv2.VideoCapture(video_path)
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            st.write(f"Video loaded: {total_frames} frames, {fps:.2f} FPS")
+            sample_rate = 1  
+            frames = []
+            frame_indices = []
+            with st.spinner(f"Extracting frames (sampling 1 in every {sample_rate} frames)..."):
+                frame_idx = 0
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
+                    if frame_idx % sample_rate == 0:
+                        frames.append(frame)
+                        frame_indices.append(frame_idx)
+                    frame_idx += 1
+            cap.release()
+            st.write(f"Extracted {len(frames)} frames for processing.")
 
-    st.write(f"Loaded {len(frames)} frames.")
-    movement_indices = movement_detector.detect_significant_movement(frames)
-    st.write("Significant movement detected at frames:", movement_indices)
+          
+            key = (uploaded_video.name, detection_type, threshold, min_features, min_area)
+            if 'last_key' not in st.session_state or st.session_state['last_key'] != key:
+                if detection_type == "Camera Movement":
+                    with st.spinner("Detecting camera movement..."):
+                        movement_indices = detect_significant_movement_orb(
+                            frames, threshold=threshold, min_matches=min_features
+                        )
+                        analysis = analyze_orb_movement(frames, movement_indices, orb_threshold=threshold, min_matches=min_features)
+                    st.session_state['results'] = {
+                        'type': 'camera',
+                        'movement_indices': movement_indices,
+                        'frame_indices': frame_indices,
+                        'fps': fps,
+                        'threshold': threshold,
+                        'min_features': min_features,
+                        'uploaded_video': uploaded_video,
+                        'frames': frames,
+                        'show_visualization': show_visualization
+                    }
+                    st.session_state['analysis'] = analysis
+                else:
+                    with st.spinner("Detecting object movement..."):
+                        motion_results = detect_object_movement_with_compensation(
+                            frames,
+                            min_area=min_area
+                        )
+                    st.session_state['results'] = {
+                        'type': 'object',
+                        'motion_results': motion_results,
+                        'frame_indices': frame_indices,
+                        'fps': fps,
+                        'min_area': min_area,
+                        'uploaded_video': uploaded_video,
+                        'frames': frames,
+                        'show_visualization': show_visualization
+                    }
+                st.session_state['last_key'] = key
+    with tab2:
+        results = st.session_state.get('results', None)
+        analysis = st.session_state.get('analysis', None)
+        if results:
+            if results['type'] == 'camera':
+                show_results_camera(
+                    tab2,
+                    results['movement_indices'],
+                    results['frame_indices'],
+                    results['fps'],
+                    results['threshold'],
+                    results['min_features'],
+                    results['uploaded_video'],
+                    generate_report_link,
+                    results['frames'],
+                    results['show_visualization'],
+                    visualize_movement
+                )
+                
+                show_report_link(
+                    tab2,
+                    results['movement_indices'],
+                    results['frame_indices'],
+                    results['fps'],
+                    results['threshold'],
+                    results['min_features'],
+                    None,
+                    results['uploaded_video'],
+                    generate_report_link,
+                    'camera'
+                )
+            else:
+                motion_results = results['motion_results']
+                frame_indices = results['frame_indices']
+                show_visualization = results['show_visualization']
+                frames = results['frames']
+                st.subheader("Frames with Detected Object Movement")
+                detected_indices = [mr['frame_index'] for mr in motion_results if mr['motion_detected']]
+                st.write(f"Object movement detected at {len(detected_indices)} frames.")
+                st.write(f"Video frame indices: {detected_indices}")
+                if detected_indices:
+                    cols = st.columns(min(len(detected_indices), 3))
+                    for i, idx in enumerate(detected_indices):
+                        col_idx = i % len(cols)
+                        with cols[col_idx]:
+                            motion_result = motion_results[idx]
+                            if show_visualization:
+                                vis_frame = visualize_object_motion_bs(frames[idx], motion_result)
+                                st.image(vis_frame, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            else:
+                                st.image(frames[idx], caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                # Rapor linkini ekle
+                show_report_link(
+                    tab2,
+                    detected_indices,
+                    frame_indices,
+                    results['fps'],
+                    None,
+                    None,
+                    results['min_area'],
+                    results['uploaded_video'],
+                    generate_report_link,
+                    'object'
+                )
+        else:
+            st.info("Please upload a video and start analysis from the first tab.")
 
-    # Optionally show frames with detected movement
-    for idx in movement_indices:
-        st.image(frames[idx], caption=f"Movement at frame {idx}", use_column_width=True)
+if __name__ == "__main__":
+    main()
