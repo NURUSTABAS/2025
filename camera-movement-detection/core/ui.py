@@ -70,11 +70,11 @@ def show_results_camera(tab, movement_indices, frame_indices, fps, threshold, mi
                             vis_frame = visualize_movement(frames[idx-1], frames[idx])
                             # BGR'den RGB'ye çevir
                             vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
-                            st.image(vis_frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            st.image(vis_frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}")
                         elif idx < len(frames):
                             # BGR'den RGB'ye çevir
                             frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
-                            st.image(frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            st.image(frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}")
                     except Exception as e:
                         st.error(f"Error displaying frame: {str(e)}")
                         st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
@@ -96,11 +96,11 @@ def show_results_object(tab, movement_indices, frame_indices, fps, min_area, upl
                             vis_frame = visualize_object_movement(frames[idx], min_area=min_area)
                             # BGR'den RGB'ye çevir
                             vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
-                            st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}")
                         else:
                             # BGR'den RGB'ye çevir
                             frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
-                            st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}")
                     except Exception as e:
                         st.error(f"Error displaying frame: {str(e)}")
                         st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")

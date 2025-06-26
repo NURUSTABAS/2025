@@ -223,11 +223,11 @@ def main():
                                     vis_frame = visualize_object_motion_bs(frames[idx], motion_result)
                                     # BGR'den RGB'ye çevir
                                     vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
-                                    st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                                    st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}")
                                 else:
                                     # BGR'den RGB'ye çevir
                                     frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
-                                    st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                                    st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}")
                             except Exception as e:
                                 st.error(f"Error displaying frame: {str(e)}")
                                 st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
