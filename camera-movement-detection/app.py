@@ -58,7 +58,8 @@ def main():
     with tab1:
         detection_type, threshold, min_features, min_area, show_visualization = sidebar_params()
         uploaded_video = video_upload()
-        if uploaded_video:
+        analyze = st.button("Analiz Et")
+        if uploaded_video and analyze:
             tfile = tempfile.NamedTemporaryFile(delete=False)
             tfile.write(uploaded_video.read())
             video_path = tfile.name
@@ -82,9 +83,8 @@ def main():
             cap.release()
             st.write(f"Extracted {len(frames)} frames for processing.")
 
-          
             key = (uploaded_video.name, detection_type, threshold, min_features, min_area)
-            if 'last_key' not in st.session_state or st.session_state['last_key'] != key:
+            if 'last_key' not in st.session_state or st.session_state['last_key'] != key or analyze:
                 if detection_type == "Camera Movement":
                     with st.spinner("Detecting camera movement..."):
                         movement_indices = detect_significant_movement_orb(
@@ -138,7 +138,6 @@ def main():
                     results['show_visualization'],
                     visualize_movement
                 )
-                
                 show_report_link(
                     tab2,
                     results['movement_indices'],
@@ -171,7 +170,6 @@ def main():
                                 st.image(vis_frame, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
                             else:
                                 st.image(frames[idx], caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
-                # Rapor linkini ekle
                 show_report_link(
                     tab2,
                     detected_indices,
