@@ -77,11 +77,22 @@ def main():
                     if not ret:
                         break
                     if frame_idx % sample_rate == 0:
-                        frames.append(frame)
+                        frames.append(frame.copy())  # frame'i kopyala, bellekte tut
                         frame_indices.append(frame_idx)
                     frame_idx += 1
             cap.release()
             st.write(f"Extracted {len(frames)} frames for processing.")
+
+            # Frame'leri ve analiz sonuçlarını session_state'e kaydet
+            st.session_state['frames'] = frames
+            st.session_state['frame_indices'] = frame_indices
+            st.session_state['fps'] = fps
+            st.session_state['uploaded_video'] = uploaded_video
+            st.session_state['detection_type'] = detection_type
+            st.session_state['threshold'] = threshold
+            st.session_state['min_features'] = min_features
+            st.session_state['min_area'] = min_area
+            st.session_state['show_visualization'] = show_visualization
 
             key = (uploaded_video.name, detection_type, threshold, min_features, min_area)
             if 'last_key' not in st.session_state or st.session_state['last_key'] != key or analyze:
@@ -121,28 +132,32 @@ def main():
                     }
                 st.session_state['last_key'] = key
     with tab2:
+        # Frame'leri ve analiz sonuçlarını session_state'ten al
         results = st.session_state.get('results', None)
         analysis = st.session_state.get('analysis', None)
-        if results:
+        frames = st.session_state.get('frames', None)
+        frame_indices = st.session_state.get('frame_indices', None)
+        fps = st.session_state.get('fps', None)
+        if results and frames is not None and frame_indices is not None and fps is not None:
             if results['type'] == 'camera':
                 show_results_camera(
                     tab2,
                     results['movement_indices'],
-                    results['frame_indices'],
-                    results['fps'],
+                    frame_indices,
+                    fps,
                     results['threshold'],
                     results['min_features'],
                     results['uploaded_video'],
                     generate_report_link,
-                    results['frames'],
+                    frames,
                     results['show_visualization'],
                     visualize_movement
                 )
                 show_report_link(
                     tab2,
                     results['movement_indices'],
-                    results['frame_indices'],
-                    results['fps'],
+                    frame_indices,
+                    fps,
                     results['threshold'],
                     results['min_features'],
                     None,
@@ -152,9 +167,7 @@ def main():
                 )
             else:
                 motion_results = results['motion_results']
-                frame_indices = results['frame_indices']
                 show_visualization = results['show_visualization']
-                frames = results['frames']
                 st.subheader("Frames with Detected Object Movement")
                 detected_indices = [mr['frame_index'] for mr in motion_results if mr['motion_detected']]
                 st.write(f"Object movement detected at {len(detected_indices)} frames.")
@@ -174,7 +187,7 @@ def main():
                     tab2,
                     detected_indices,
                     frame_indices,
-                    results['fps'],
+                    fps,
                     None,
                     None,
                     results['min_area'],
