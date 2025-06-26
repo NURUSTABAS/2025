@@ -218,11 +218,19 @@ def main():
                         col_idx = i % len(cols)
                         with cols[col_idx]:
                             motion_result = motion_results[idx]
-                            if show_visualization:
-                                vis_frame = visualize_object_motion_bs(frames[idx], motion_result)
-                                st.image(vis_frame, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
-                            else:
-                                st.image(frames[idx], caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            try:
+                                if show_visualization:
+                                    vis_frame = visualize_object_motion_bs(frames[idx], motion_result)
+                                    # BGR'den RGB'ye çevir
+                                    vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
+                                    st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                                else:
+                                    # BGR'den RGB'ye çevir
+                                    frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
+                                    st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                            except Exception as e:
+                                st.error(f"Frame görüntülenirken hata: {str(e)}")
+                                st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
                 show_report_link(
                     tab2,
                     detected_indices,

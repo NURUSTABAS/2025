@@ -54,6 +54,7 @@ def main_tabs():
     return tab1, tab2
 
 def show_results_camera(tab, movement_indices, frame_indices, fps, threshold, min_features, uploaded_video, generate_report_link, frames, show_visualization, visualize_movement):
+    import cv2
     video_movement_indices = [frame_indices[i] for i in movement_indices]
     with tab:
         st.subheader("Frames with Detected Camera Movement and Analysis")
@@ -64,13 +65,22 @@ def show_results_camera(tab, movement_indices, frame_indices, fps, threshold, mi
             for i, idx in enumerate(movement_indices):
                 col_idx = i % len(cols)
                 with cols[col_idx]:
-                    if idx > 0 and show_visualization and idx < len(frames):
-                        vis_frame = visualize_movement(frames[idx-1], frames[idx])
-                        st.image(vis_frame, caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
-                    elif idx < len(frames):
-                        st.image(frames[idx], caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
+                    try:
+                        if idx > 0 and show_visualization and idx < len(frames):
+                            vis_frame = visualize_movement(frames[idx-1], frames[idx])
+                            # BGR'den RGB'ye çevir
+                            vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
+                            st.image(vis_frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
+                        elif idx < len(frames):
+                            # BGR'den RGB'ye çevir
+                            frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
+                            st.image(frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Frame görüntülenirken hata: {str(e)}")
+                        st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
 
 def show_results_object(tab, movement_indices, frame_indices, fps, min_area, uploaded_video, generate_report_link, frames, show_visualization, visualize_object_movement):
+    import cv2
     video_movement_indices = [frame_indices[i] for i in movement_indices]
     with tab:
         st.subheader("Frames with Detected Object Movement")
@@ -81,11 +91,19 @@ def show_results_object(tab, movement_indices, frame_indices, fps, min_area, upl
             for i, idx in enumerate(movement_indices):
                 col_idx = i % len(cols)
                 with cols[col_idx]:
-                    if show_visualization:
-                        vis_frame = visualize_object_movement(frames[idx], min_area=min_area)
-                        st.image(vis_frame, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
-                    else:
-                        st.image(frames[idx], caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                    try:
+                        if show_visualization:
+                            vis_frame = visualize_object_movement(frames[idx], min_area=min_area)
+                            # BGR'den RGB'ye çevir
+                            vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
+                            st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                        else:
+                            # BGR'den RGB'ye çevir
+                            frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
+                            st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
+                    except Exception as e:
+                        st.error(f"Frame görüntülenirken hata: {str(e)}")
+                        st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
 
 def show_report_link(tab, movement_indices, frame_indices, fps, threshold, min_features, min_area, uploaded_video, generate_report_link, result_type):
     video_movement_indices = [frame_indices[i] for i in movement_indices]
