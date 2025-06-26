@@ -5,6 +5,9 @@ If you change any parameter or switch between camera movement and object movemen
 This ensures that the analysis is only performed when you explicitly request it, preventing unnecessary computations for large videos.
 After the analysis is completed, the captured frames (analyzed video frames) and detected movements are visually presented in the Results tab.
 Additionally, at the bottom of the Results section, there is a downloadable analysis report available for the user.
+## ☁️ Live Demo
+
+🟢 Open the Live Streamlit App -- https://core2025.streamlit.app/
 
 ## 1. Project Overview
 
