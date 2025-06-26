@@ -199,4 +199,5 @@ def main():
             st.info("Please upload a video and start analysis from the first tab.")
 
 if __name__ == "__main__":
+    st.write('App started!')
     main()
