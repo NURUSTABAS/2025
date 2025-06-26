@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import io
 import base64
-import gc  # Garbage collection için
+import gc  
 from PIL import Image
 from core.movement import (
     detect_significant_movement,
@@ -68,8 +68,7 @@ def main():
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)
             st.write(f"Video loaded: {total_frames} frames, {fps:.2f} FPS")
-            # Deployment için optimize edilmiş frame limiti
-            # Streamlit Cloud bellek limitlerini dikkate alarak
+          
             is_cloud = (
                 'STREAMLIT_SHARING' in os.environ or 
                 'STREAMLIT_CLOUD' in os.environ or
@@ -77,15 +76,15 @@ def main():
             )
             
             if is_cloud:
-                # Cloud deployment için daha düşük limit
-                MAX_FRAMES = 50  # Daha da düşük limit
+                
+                MAX_FRAMES = 50  
                 st.info("🚀 Cloud deployment detected. Maximum 50 frames will be analyzed for performance.")
             else:
-                # Local çalıştırma için kullanıcı seçimi
+               
                 max_frames_option = st.selectbox(
                     "Select maximum frame count:",
                     ["50", "100", "200"],
-                    index=1  # Varsayılan olarak 100
+                    index=1 
                 )
                 MAX_FRAMES = int(max_frames_option)
             
@@ -104,8 +103,8 @@ def main():
                     if not ret:
                         break
                     if frame_idx % sample_rate == 0:
-                        # Bellek optimizasyonu için frame'i küçült
-                        if frame.shape[0] > 720:  # Yükseklik 720'den büyükse küçült
+                       
+                        if frame.shape[0] > 720: 
                             scale = 720 / frame.shape[0]
                             new_width = int(frame.shape[1] * scale)
                             frame = cv2.resize(frame, (new_width, 720))
@@ -113,14 +112,14 @@ def main():
                         frame_indices.append(frame_idx)
                         extracted_count += 1
                         
-                        # Deployment için ekstra güvenlik - maksimum frame sayısını aşma
+                        
                         if extracted_count >= MAX_FRAMES:
                             break
                     frame_idx += 1
             cap.release()
             st.write(f"Extracted {len(frames)} frames for processing.")
 
-            # Frame'leri ve analiz sonuçlarını session_state'e kaydet
+            
             st.session_state['frames'] = frames
             st.session_state['frame_indices'] = frame_indices
             st.session_state['fps'] = fps
@@ -152,7 +151,7 @@ def main():
                     }
                     st.session_state['analysis'] = analysis
                     
-                    # Bellek temizliği
+                   
                     gc.collect()
                 else:
                     with st.spinner("Detecting object movement..."):
@@ -172,7 +171,7 @@ def main():
                     }
                 st.session_state['last_key'] = key
     with tab2:
-        # Frame'leri ve analiz sonuçlarını session_state'ten al
+       
         results = st.session_state.get('results', None)
         analysis = st.session_state.get('analysis', None)
         frames = st.session_state.get('frames', None)
@@ -221,11 +220,11 @@ def main():
                             try:
                                 if show_visualization:
                                     vis_frame = visualize_object_motion_bs(frames[idx], motion_result)
-                                    # BGR'den RGB'ye çevir
+                                
                                     vis_frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
                                     st.image(vis_frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}")
                                 else:
-                                    # BGR'den RGB'ye çevir
+                                    
                                     frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
                                     st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}")
                             except Exception as e:
