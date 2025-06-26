@@ -79,11 +79,11 @@ def main():
             if is_cloud:
                 # Cloud deployment için daha düşük limit
                 MAX_FRAMES = 50  # Daha da düşük limit
-                st.info("🚀 Cloud deployment tespit edildi. Performans için maksimum 50 frame analiz edilecek.")
+                st.info("🚀 Cloud deployment detected. Maximum 50 frames will be analyzed for performance.")
             else:
                 # Local çalıştırma için kullanıcı seçimi
                 max_frames_option = st.selectbox(
-                    "Maksimum frame sayısı seçin:",
+                    "Select maximum frame count:",
                     ["50", "100", "200"],
                     index=1  # Varsayılan olarak 100
                 )
@@ -91,7 +91,7 @@ def main():
             
             if total_frames > MAX_FRAMES:
                 sample_rate = max(1, total_frames // MAX_FRAMES)
-                st.warning(f"Video çok uzun, bu nedenle sadece {MAX_FRAMES} frame analiz edilecek (her {sample_rate}. frame kullanılacak).")
+                st.warning(f"Video is too long, only {MAX_FRAMES} frames will be analyzed (every {sample_rate}th frame will be used).")
             else:
                 sample_rate = 1
             frames = []
@@ -229,7 +229,7 @@ def main():
                                     frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
                                     st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
                             except Exception as e:
-                                st.error(f"Frame görüntülenirken hata: {str(e)}")
+                                st.error(f"Error displaying frame: {str(e)}")
                                 st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
                 show_report_link(
                     tab2,

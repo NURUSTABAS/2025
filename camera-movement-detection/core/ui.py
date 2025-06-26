@@ -76,7 +76,7 @@ def show_results_camera(tab, movement_indices, frame_indices, fps, threshold, mi
                             frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
                             st.image(frame_rgb, caption=f"Camera Movement at frame {frame_indices[idx]}", use_container_width=True)
                     except Exception as e:
-                        st.error(f"Frame görüntülenirken hata: {str(e)}")
+                        st.error(f"Error displaying frame: {str(e)}")
                         st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
 
 def show_results_object(tab, movement_indices, frame_indices, fps, min_area, uploaded_video, generate_report_link, frames, show_visualization, visualize_object_movement):
@@ -102,7 +102,7 @@ def show_results_object(tab, movement_indices, frame_indices, fps, min_area, upl
                             frame_rgb = cv2.cvtColor(frames[idx], cv2.COLOR_BGR2RGB)
                             st.image(frame_rgb, caption=f"Object Movement at frame {frame_indices[idx]}", use_container_width=True)
                     except Exception as e:
-                        st.error(f"Frame görüntülenirken hata: {str(e)}")
+                        st.error(f"Error displaying frame: {str(e)}")
                         st.write(f"Frame index: {idx}, Frame shape: {frames[idx].shape if idx < len(frames) else 'N/A'}")
 
 def show_report_link(tab, movement_indices, frame_indices, fps, threshold, min_features, min_area, uploaded_video, generate_report_link, result_type):
