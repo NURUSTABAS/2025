@@ -171,7 +171,7 @@ streamlit run app.py
 ```
 
 ## 13. Input Output images
-streamlit.app Input Screen 
+streamlit.app  Screen 
 ![image](https://github.com/user-attachments/assets/8784f324-6f43-41d2-9290-baa68fc3cabd)
 ![image](https://github.com/user-attachments/assets/ce903240-9ade-431a-9929-2869c7d3d3f6)
 
